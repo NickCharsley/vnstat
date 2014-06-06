@@ -19,13 +19,13 @@ int readdb(const char *iface, const char *dirname)
 		}
 
 		if (fread(&data,sizeof(DATA),1,db)==0) {
-			data.version=-1;
+			if (data.version==DBVERSION) data.version=-1;
 			if (debug) {
 				printf("db: Database read failed for file \"%s\".\n", file);
 			}
 		} else {
 			if (debug) {
-				printf("db: Database loaded for interface \"%s\"...\n", data.interface);
+				printf("db: Database loaded for interface \"%s\"...\n", data.iface.interface);
 			}
 		}
 
@@ -60,7 +60,7 @@ int readdb(const char *iface, const char *dirname)
 						}
 					} else {
 						if (debug) {
-							printf("db: Database loaded for interface \"%s\"...\n", data.interface);
+							printf("db: Database loaded for interface \"%s\"...\n", data.iface.interface);
 						}
 					}
 
@@ -104,19 +104,19 @@ int readdb(const char *iface, const char *dirname)
 
 		fclose(db);
 
-		if (strcmp(data.interface,iface)) {
-			snprintf(errorstring, 512, "Warning:\nThe previous interface for this file was \"%s\".",data.interface);
+		if (strcmp(data.iface.interface,iface)) {
+			snprintf(errorstring, 512, "Warning:\nThe previous interface for this file was \"%s\".",data.iface.interface);
 			printe(PT_Multiline);
 			snprintf(errorstring, 512, "It has now been replaced with \"%s\".",iface);
 			printe(PT_Multiline);
 			snprintf(errorstring, 512, "You can ignore this message if you renamed the filename.");
 			printe(PT_Multiline);
-			snprintf(errorstring, 512, "Interface name mismatch, renamed \"%s\" -> \"%s\"", data.interface, iface);
+			snprintf(errorstring, 512, "Interface name mismatch, renamed \"%s\" -> \"%s\"", data.iface.interface, iface);
 			printe(PT_ShortMultiline);
-			if (strcmp(data.interface, data.nick)==0) {
-				strncpy_nt(data.nick, iface, 32);
+			if (strcmp(data.iface.interface, data.iface.nick)==0) {
+				strncpy_nt(data.iface.nick, iface, 32);
 			}
-			strncpy_nt(data.interface, iface, 32);
+			strncpy_nt(data.iface.interface, iface, 32);
 		}
 	} else {
 		snprintf(errorstring, 512, "Unable to read database \"%s\": %s", file, strerror(errno));
@@ -124,8 +124,8 @@ int readdb(const char *iface, const char *dirname)
 
 		newdb=1;
 		initdb();
-		strncpy_nt(data.interface, iface, 32);
-		strncpy_nt(data.nick, data.interface, 32);
+		strncpy_nt(data.iface.interface, iface, 32);
+		strncpy_nt(data.iface.nick, data.iface.interface, 32);
 	}
 	return newdb;
 }
@@ -141,7 +141,7 @@ void initdb(void)
 
 	/* set default values for a new database */
 	data.version=DBVERSION;
-	data.active=1;
+	data.iface.active=1;
 	data.totalrx=0;
 	data.totaltx=0;
 	data.currx=0;
@@ -293,267 +293,370 @@ int backupdb(const char *current, const char *backup)
 	return 1;
 }
 
+/**
+ * 
+ * @param data10
+ * @return 
+ */
+DATA12 convertTov2(DATA10 data10){
+    
+    DATA12 data12;
+    int i, days, mod;
+    time_t current;
+    struct tm *d;
+    int month=0, day;
+    int tm_mday, tm_mon, tm_year;
+
+    current=time(NULL);
+    d=localtime(&current);
+    days=d->tm_mday-1;
+
+    tm_mday=d->tm_mday;
+    tm_mon=d->tm_mon;
+    tm_year=d->tm_year;
+    
+    snprintf(errorstring, 512, "Converting to db v2...\n");
+    printe(PT_Info);
+
+    /* set basic values */
+    data12.version=2;
+    strncpy_nt(data12.interface, data10.interface, 32);
+    strncpy_nt(data12.nick, data10.interface, 32);
+    data12.active=1;
+    data12.totalrx=data10.totalrx;
+    data12.totaltx=data10.totaltx;
+    data12.currx=data10.currx;
+    data12.curtx=data10.curtx;
+    data12.totalrxk=data10.totalrxk;
+    data12.totaltxk=data10.totaltxk;
+    data12.lastupdated=data10.lastupdated;
+    data12.created=data10.created;
+    data12.btime=data10.btime;
+
+    /* days */
+    for (i=0; i<=29; i++) {
+            if (data10.day[i].rx+data10.day[i].tx>0) {
+                    data12.day[i].rx=data10.day[i].rx;
+                    data12.day[i].tx=data10.day[i].tx;
+                    data12.day[i].date=current-(i*86400);
+                    data12.day[i].used=1;
+            } else {
+                    data12.day[i].rx=0;
+                    data12.day[i].tx=0;
+                    data12.day[i].used=0;
+            }
+    }
+
+    /* months */
+    for (i=0; i<=11; i++) {
+            if (data10.month[i].rx+data10.month[i].tx>0) {
+                    data12.month[i].rx=data10.month[i].rx;
+                    data12.month[i].tx=data10.month[i].tx;
+
+                    data12.month[i].month=current-(86400*days);
+
+                    /* we have to do this modulo thing to get the number of days right */
+                    mod=(d->tm_mon-i-1)%12;
+                    if (mod<0)
+                            mod=12+mod;
+                    days+=dmonth(mod);
+                    data12.month[i].used=1;
+            } else {
+                    data12.month[i].rx=0;
+                    data12.month[i].tx=0;
+                    data12.month[i].used=0;
+            }
+    }
+
+    /* top10 */
+    for (i=0; i<=9; i++) {
+            if (data10.top10[i].rx+data10.top10[i].tx>0) {
+                    data12.top10[i].rx=data10.top10[i].rx;
+                    data12.top10[i].tx=data10.top10[i].tx;
+
+                    /* get day */
+                    day=atoi(data10.top10[i].date+7);
+
+                    /* parse month */
+                    if (strncmp(data10.top10[i].date+4, "Jan", 3)==0) {
+                            month=0;
+                    } else if (strncmp(data10.top10[i].date+4, "Feb", 3)==0) {
+                            month=1;
+                    } else if (strncmp(data10.top10[i].date+4, "Mar", 3)==0) {
+                            month=2;
+                    } else if (strncmp(data10.top10[i].date+4, "Apr", 3)==0) {
+                            month=3;
+                    } else if (strncmp(data10.top10[i].date+4, "May", 3)==0) {
+                            month=4;
+                    } else if (strncmp(data10.top10[i].date+4, "Jun", 3)==0) {
+                            month=5;
+                    } else if (strncmp(data10.top10[i].date+4, "Jul", 3)==0) {
+                            month=6;
+                    } else if (strncmp(data10.top10[i].date+4, "Aug", 3)==0) {
+                            month=7;
+                    } else if (strncmp(data10.top10[i].date+4, "Sep", 3)==0) {
+                            month=8;
+                    } else if (strncmp(data10.top10[i].date+4, "Oct", 3)==0) {
+                            month=9;
+                    } else if (strncmp(data10.top10[i].date+4, "Nov", 3)==0) {
+                            month=10;
+                    } else if (strncmp(data10.top10[i].date+4, "Dec", 3)==0) {
+                            month=11;
+                    } else {
+                            month=-1;
+                            snprintf(errorstring, 512, "Convertion for date \"%s\" failed.", data10.top10[i].date);
+                            printe(PT_Error);
+
+                    }
+
+                    if (month==-1)
+                            break;
+
+                    /* guess year */
+                    d->tm_year=tm_year;
+                    if ((month>tm_mon) || ((month==tm_mon) && (day>tm_mday)))
+                            d->tm_year--;
+
+                    d->tm_mday=day;
+                    d->tm_mon=month;
+                    data12.top10[i].date=mktime(d);
+                    data12.top10[i].used=1;
+
+            } else {
+                    data12.top10[i].used=0;
+                    data12.top10[i].rx=0;
+                    data12.top10[i].tx=0;
+            }
+
+
+
+    }
+
+    /* reset top10 if there was some problem */
+    if (month==-1) {
+            for (i=0; i<=9; i++) {
+                    data12.top10[i].rx=data.top10[i].tx=0;
+                    data12.top10[i].used=0;
+            } 
+    }
+
+    return data12;
+}
+
+DATA13 convertTov3(DATA12 data12){
+    DATA13 data13;
+    int i;
+    printf("Converting to db v3...\n");
+
+    /* set basic values */
+    data13.version=3;
+    strncpy_nt(data13.interface, data12.interface, 32);
+    strncpy_nt(data13.nick, data12.nick, 32);
+    data13.active=data12.active;
+    data13.totalrx=data12.totalrx;
+    data13.totaltx=data12.totaltx;
+    data13.currx=data12.currx;
+    data13.curtx=data12.curtx;
+    data13.totalrxk=data12.totalrxk;
+    data13.totaltxk=data12.totaltxk;
+    data13.lastupdated=data12.lastupdated;
+    data13.created=data12.created;
+    data13.btime=data12.btime;
+
+    /* days */
+    for (i=0; i<=29; i++) {
+            if (data12.day[i].used) {
+                    data13.day[i].rx=data12.day[i].rx;
+                    data13.day[i].tx=data12.day[i].tx;
+                    data13.day[i].rxk=data13.day[i].txk=0;
+                    data13.day[i].date=data12.day[i].date;
+                    data13.day[i].used=1;
+            } else {
+                    data13.day[i].rx=data13.day[i].tx=0;
+                    data13.day[i].rxk=data13.day[i].txk=0;
+                    data13.day[i].used=0;
+            }
+    }
+
+    /* months */
+    for (i=0; i<=11; i++) {
+            if (data12.month[i].used) {
+                    data13.month[i].rx=data12.month[i].rx;
+                    data13.month[i].tx=data12.month[i].tx;
+                    data13.month[i].rxk=data13.month[i].txk=0;
+                    data13.month[i].month=data12.month[i].month;
+                    data13.month[i].used=1;
+            } else {
+                    data13.month[i].rx=data13.month[i].tx=0;
+                    data13.month[i].rxk=data13.month[i].txk=0;
+                    data13.month[i].used=0;
+            }
+    }
+
+    /* top10 */
+    for (i=0;i<=9;i++) {
+            if (data12.top10[i].used) {
+                    data13.top10[i].rx=data12.top10[i].rx;
+                    data13.top10[i].tx=data12.top10[i].tx;
+                    data13.top10[i].rxk=data13.top10[i].txk=0;
+                    data13.top10[i].date=data12.top10[i].date;
+                    data13.top10[i].used=1;
+            } else {
+                    data13.top10[i].rx=data13.top10[i].tx=0;
+                    data13.top10[i].rxk=data13.top10[i].txk=0;
+                    data13.top10[i].date=0;
+                    data13.top10[i].used=0;
+            }
+    }
+
+    /* hours */
+    for (i=0;i<=23;i++) {
+            data13.hour[i].rx=0;
+            data13.hour[i].tx=0;
+            data13.hour[i].date=0;
+    }
+    return data13;
+}
+
+DATA14 convertTov4(DATA13 data13){
+    DATA14 data14;
+    int i;
+    printf("Converting to db v4...\n");
+
+    /* set basic values */
+    data14.version=4;
+    strncpy_nt(data14.iface.ssid, "", 32);
+    data14.monthrotate=cfg.monthrotate;
+
+    /* copy v3 values over to new struct */
+    strncpy_nt(data14.iface.interface, data13.interface, 32);
+    strncpy_nt(data14.iface.nick, data13.nick, 32);
+    data14.iface.active=data13.active;
+    data14.totalrx=data13.totalrx;
+    data14.totaltx=data13.totaltx;
+    data14.currx=data13.currx;
+    data14.curtx=data13.curtx;
+    data14.totalrxk=data13.totalrxk;
+    data14.totaltxk=data13.totaltxk;
+    data14.lastupdated=data13.lastupdated;
+    data14.created=data13.created;
+    data14.btime=data13.btime;
+
+    /* days */
+    for (i=0; i<=29; i++) {
+        data14.day[i].rx=data13.day[i].rx;
+        data14.day[i].tx=data13.day[i].tx;
+        data14.day[i].rxk=data13.day[i].rxk;
+        data14.day[i].txk=data13.day[i].txk;
+        data14.day[i].date=data13.day[i].date;
+        data14.day[i].used=data13.day[i].used;
+    }
+
+    /* months */
+    for (i=0; i<=11; i++) {
+        data14.month[i].rx=data13.month[i].rx;
+        data14.month[i].tx=data13.month[i].tx;
+        data14.month[i].rxk=data14.month[i].rxk;
+        data14.month[i].txk=data14.month[i].txk;
+        data14.month[i].month=data13.month[i].month;
+        data14.month[i].used=data13.month[i].used;
+    }
+
+    /* top10 */
+    for (i=0;i<=9;i++) {
+        data14.top10[i].rx=data13.top10[i].rx;
+        data14.top10[i].tx=data13.top10[i].tx;
+        data14.top10[i].rxk=data14.top10[i].rxk;
+        data14.top10[i].txk=data14.top10[i].txk;
+        data14.top10[i].date=data13.top10[i].date;
+        data14.top10[i].used=data13.top10[i].used;
+    }
+
+    /* hours */
+    for (i=0;i<=23;i++) {
+            data14.hour[i].rx=data13.hour[i].rx;
+            data14.hour[i].tx=data13.hour[i].tx;
+            data14.hour[i].date=data13.hour[i].date;
+    } 
+    return data14;
+}
+
+
 int convertdb(FILE *db)
 {
-	int i, days, mod;
-	DATA10 data10;
-	DATA12 data12;
-	time_t current;
-	struct tm *d;
-	int month=0, day;
-	int tm_mday, tm_mon, tm_year;
-	int converted=0;
+    DATA10 data10;
+    DATA12 data12;
+    DATA13 data13;
+    
+    int converted=0;
+    /*
+     * N.B. version one does an unneeded check on converted to give each block the same structure!
+     */
+    
+    /* version 1.0 database format */
+    if (data.version==1) {
+        if (converted==0) {
+            rewind(db);
+            if (fread(&data10, sizeof(DATA10), 1, db)==0) {
+                    snprintf(errorstring, 512, "Unable to convert corrupted database.");
+                    printe(PT_Error);
+                    return 0;
+            }
 
-	current=time(NULL);
-	d=localtime(&current);
-	days=d->tm_mday-1;
+            data12=convertTov2(data10);
+            converted=1;
+        }
+    } 
 
-	tm_mday=d->tm_mday;
-	tm_mon=d->tm_mon;
-	tm_year=d->tm_year;
+    /* version 1.1-1.2 database format */
+    if (data.version==2 || converted==1) {
+        /* don't read from file if already in memory */
+        if (converted==0) {
+                rewind(db);
+                if (fread(&data12, sizeof(DATA12), 1, db)==0) {
+                        snprintf(errorstring, 512, "Unable to convert corrupted database.");
+                        printe(PT_Error);
+                        return 0;
+                }
+        }
+        data13=convertTov3(data12);
+        converted=1;
+    }
 
-	/* version 1.0 database format */
-	if (data.version==1) {
+    /* version 1.2-1.12 database format */
+    if (data.version==3 || converted==1) {
+        /* don't read from file if already in memory */
+        if (converted==0) {
+                rewind(db);
+                if (fread(&data13, sizeof(DATA13), 1, db)==0) {
+                        snprintf(errorstring, 512, "Unable to convert corrupted database.");
+                        printe(PT_Error);
+                        return 0;
+                }
+        }
+        data=convertTov4(data13);
+        converted=1;
+    }
 
-		snprintf(errorstring, 512, "Converting to db v2...\n");
-		printe(PT_Info);
+    /* corrupted or unknown version handling */
+    if (data.version==0) {
+            snprintf(errorstring, 512, "Unable to convert corrupted database.");
+            printe(PT_Error);
+            return 0;
+    } else if (data.version>DBVERSION) {
+            snprintf(errorstring, 512, "Unable to downgrade database from version \"%d\".", data.version);
+            printe(PT_Error);
+            return 0;
+    } else if (data.version!=DBVERSION) {
+            snprintf(errorstring, 512, "Unable to convert database version \"%d\".", data.version);
+            printe(PT_Error);
+            return 0;
+    }
 
-		rewind(db);
-		if (fread(&data10, sizeof(DATA10), 1, db)==0) {
-			snprintf(errorstring, 512, "Unable to convert corrupted database.");
-			printe(PT_Error);
-			return 0;
-		}
+    snprintf(errorstring, 512, "Conversion done.");
+    printe(PT_Info);
 
-		/* set basic values */
-		data12.version=2;
-		strncpy_nt(data12.interface, data10.interface, 32);
-		strncpy_nt(data12.nick, data10.interface, 32);
-		data12.active=1;
-		data12.totalrx=data10.totalrx;
-		data12.totaltx=data10.totaltx;
-		data12.currx=data10.currx;
-		data12.curtx=data10.curtx;
-		data12.totalrxk=data10.totalrxk;
-		data12.totaltxk=data10.totaltxk;
-		data12.lastupdated=data10.lastupdated;
-		data12.created=data10.created;
-		data12.btime=data10.btime;
-
-		/* days */
-		for (i=0; i<=29; i++) {
-			if (data10.day[i].rx+data10.day[i].tx>0) {
-				data12.day[i].rx=data10.day[i].rx;
-				data12.day[i].tx=data10.day[i].tx;
-				data12.day[i].date=current-(i*86400);
-				data12.day[i].used=1;
-			} else {
-				data12.day[i].rx=0;
-				data12.day[i].tx=0;
-				data12.day[i].used=0;
-			}
-		}
-
-		/* months */
-		for (i=0; i<=11; i++) {
-			if (data10.month[i].rx+data10.month[i].tx>0) {
-				data12.month[i].rx=data10.month[i].rx;
-				data12.month[i].tx=data10.month[i].tx;
-
-				data12.month[i].month=current-(86400*days);
-
-				/* we have to do this modulo thing to get the number of days right */
-				mod=(d->tm_mon-i-1)%12;
-				if (mod<0)
-					mod=12+mod;
-				days+=dmonth(mod);
-				data12.month[i].used=1;
-			} else {
-				data12.month[i].rx=0;
-				data12.month[i].tx=0;
-				data12.month[i].used=0;
-			}
-		}
-
-		/* top10 */
-		for (i=0; i<=9; i++) {
-			if (data10.top10[i].rx+data10.top10[i].tx>0) {
-				data12.top10[i].rx=data10.top10[i].rx;
-				data12.top10[i].tx=data10.top10[i].tx;
-
-				/* get day */
-				day=atoi(data10.top10[i].date+7);
-
-				/* parse month */
-				if (strncmp(data10.top10[i].date+4, "Jan", 3)==0) {
-					month=0;
-				} else if (strncmp(data10.top10[i].date+4, "Feb", 3)==0) {
-					month=1;
-				} else if (strncmp(data10.top10[i].date+4, "Mar", 3)==0) {
-					month=2;
-				} else if (strncmp(data10.top10[i].date+4, "Apr", 3)==0) {
-					month=3;
-				} else if (strncmp(data10.top10[i].date+4, "May", 3)==0) {
-					month=4;
-				} else if (strncmp(data10.top10[i].date+4, "Jun", 3)==0) {
-					month=5;
-				} else if (strncmp(data10.top10[i].date+4, "Jul", 3)==0) {
-					month=6;
-				} else if (strncmp(data10.top10[i].date+4, "Aug", 3)==0) {
-					month=7;
-				} else if (strncmp(data10.top10[i].date+4, "Sep", 3)==0) {
-					month=8;
-				} else if (strncmp(data10.top10[i].date+4, "Oct", 3)==0) {
-					month=9;
-				} else if (strncmp(data10.top10[i].date+4, "Nov", 3)==0) {
-					month=10;
-				} else if (strncmp(data10.top10[i].date+4, "Dec", 3)==0) {
-					month=11;
-				} else {
-					month=-1;
-					snprintf(errorstring, 512, "Convertion for date \"%s\" failed.", data10.top10[i].date);
-					printe(PT_Error);
-
-				}
-
-				if (month==-1)
-					break;
-
-				/* guess year */
-				d->tm_year=tm_year;
-				if ((month>tm_mon) || ((month==tm_mon) && (day>tm_mday)))
-					d->tm_year--;
-
-				d->tm_mday=day;
-				d->tm_mon=month;
-				data12.top10[i].date=mktime(d);
-				data12.top10[i].used=1;
-
-			} else {
-				data12.top10[i].used=0;
-				data12.top10[i].rx=0;
-				data12.top10[i].tx=0;
-			}
-
-
-
-		}
-
-		/* reset top10 if there was some problem */
-		if (month==-1) {
-			for (i=0; i<=9; i++) {
-				data12.top10[i].rx=data.top10[i].tx=0;
-				data12.top10[i].used=0;
-			}
-		}
-
-		converted=1;
-	} 
-
-	/* version 1.1-1.2 database format */
-	if (data.version==2 || converted==1) {
-
-		printf("Converting to db v3...\n");
-
-		/* don't read from file if already in memory */
-		if (converted==0) {
-			rewind(db);
-			if (fread(&data12, sizeof(DATA12), 1, db)==0) {
-				snprintf(errorstring, 512, "Unable to convert corrupted database.");
-				printe(PT_Error);
-				return 0;
-			}
-		}
-
-		/* set basic values */
-		data.version=3;
-		strncpy_nt(data.interface, data12.interface, 32);
-		strncpy_nt(data.nick, data12.nick, 32);
-		data.active=data12.active;
-		data.totalrx=data12.totalrx;
-		data.totaltx=data12.totaltx;
-		data.currx=data12.currx;
-		data.curtx=data12.curtx;
-		data.totalrxk=data12.totalrxk;
-		data.totaltxk=data12.totaltxk;
-		data.lastupdated=data12.lastupdated;
-		data.created=data12.created;
-		data.btime=data12.btime;
-
-		/* days */
-		for (i=0; i<=29; i++) {
-			if (data12.day[i].used) {
-				data.day[i].rx=data12.day[i].rx;
-				data.day[i].tx=data12.day[i].tx;
-				data.day[i].rxk=data.day[i].txk=0;
-				data.day[i].date=data12.day[i].date;
-				data.day[i].used=1;
-			} else {
-				data.day[i].rx=data.day[i].tx=0;
-				data.day[i].rxk=data.day[i].txk=0;
-				data.day[i].used=0;
-			}
-		}
-
-		/* months */
-		for (i=0; i<=11; i++) {
-			if (data12.month[i].used) {
-				data.month[i].rx=data12.month[i].rx;
-				data.month[i].tx=data12.month[i].tx;
-				data.month[i].rxk=data.month[i].txk=0;
-				data.month[i].month=data12.month[i].month;
-				data.month[i].used=1;
-			} else {
-				data.month[i].rx=data.month[i].tx=0;
-				data.month[i].rxk=data.month[i].txk=0;
-				data.month[i].used=0;
-			}
-		}
-
-		/* top10 */
-		for (i=0;i<=9;i++) {
-			if (data12.top10[i].used) {
-				data.top10[i].rx=data12.top10[i].rx;
-				data.top10[i].tx=data12.top10[i].tx;
-				data.top10[i].rxk=data.top10[i].txk=0;
-				data.top10[i].date=data12.top10[i].date;
-				data.top10[i].used=1;
-			} else {
-				data.top10[i].rx=data.top10[i].tx=0;
-				data.top10[i].rxk=data.top10[i].txk=0;
-				data.top10[i].date=0;
-				data.top10[i].used=0;
-			}
-		}
-
-		/* hours */
-		for (i=0;i<=23;i++) {
-			data.hour[i].rx=0;
-			data.hour[i].tx=0;
-			data.hour[i].date=0;
-		}
-
-	}
-
-	/* corrupted or unknown version handling */
-	if (data.version==0) {
-		snprintf(errorstring, 512, "Unable to convert corrupted database.");
-		printe(PT_Error);
-		return 0;
-	} else if (data.version>DBVERSION) {
-		snprintf(errorstring, 512, "Unable to downgrade database from version \"%d\".", data.version);
-		printe(PT_Error);
-		return 0;
-	} else if (data.version!=DBVERSION) {
-		snprintf(errorstring, 512, "Unable to convert database version \"%d\".", data.version);
-		printe(PT_Error);
-		return 0;
-	}
-
-	snprintf(errorstring, 512, "Conversion done.");
-	printe(PT_Info);
-
-	return 1;
+    return 1;
 }
 
 int lockdb(int fd, int dbwrite)
@@ -778,7 +881,7 @@ void cleartop10(const char *iface, const char *dirname)
 	}
 
 	writedb(iface, dirname, 0);
-	printf("Top10 cleared for interface \"%s\".\n", data.interface);
+	printf("Top10 cleared for interface \"%s\".\n", data.iface.interface);
 }
 
 void rebuilddbtotal(const char *iface, const char *dirname)
@@ -798,7 +901,7 @@ void rebuilddbtotal(const char *iface, const char *dirname)
 	}
 
 	writedb(iface, dirname, 0);
-	printf("Total transfer rebuild completed for interface \"%s\".\n", data.interface);
+	printf("Total transfer rebuild completed for interface \"%s\".\n", data.iface.interface);
 }
 
 int validatedb(void)
@@ -811,13 +914,13 @@ int validatedb(void)
 		return 0;
 	}
 
-	if (data.active<0 || data.active>1) {
-		printf("Invalid database activity status: %d\n", data.active);
+	if (data.iface.active<0 || data.iface.active>1) {
+		printf("Invalid database activity status: %d\n", data.iface.active);
 		return 0;
 	}
 
-	if (!strlen(data.interface)) {
-		printf("Invalid database interface string: %s\n", data.interface);
+	if (!strlen(data.iface.interface)) {
+		printf("Invalid database interface string: %s\n", data.iface.interface);
 		return 0;
 	}
 
@@ -928,9 +1031,9 @@ int importdb(const char *filename)
 		}
 
 		sscanf(line, "version;%2d", &data.version);
-		sscanf(line, "active;%2d", &data.active);
-		sscanf(line, "interface;%31s", data.interface);
-		sscanf(line, "nick;%31s", data.nick);
+		sscanf(line, "active;%2d", &data.iface.active);
+		sscanf(line, "interface;%31s", data.iface.interface);
+		sscanf(line, "nick;%31s", data.iface.nick);
 		if (sscanf(line, "created;%20"PRIu64, &tempint)) {
 			data.created = (time_t)tempint;
 		}

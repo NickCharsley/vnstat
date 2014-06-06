@@ -267,7 +267,7 @@ void parseifinfo(int newdb)
 	/* count traffic only if previous update wasn't too long ago */
 	if ( interval < (60*MAXUPDATEINTERVAL) ) {
 
-		/* btime in /proc/stat seems to vary ±1 second so we use btime-BVAR just to be safe */
+		/* btime in /proc/stat seems to vary ï¿½1 second so we use btime-BVAR just to be safe */
 		/* the variation is also slightly different between various kernels... */
 		if (data.btime < (btime-cfg.bvar)) {
 			data.currx=0;
@@ -292,7 +292,7 @@ void parseifinfo(int newdb)
 		}
 
 		/* get bandwidth limit for current interface */
-		maxbw = ibwget(data.interface);
+		maxbw = ibwget(data.iface.interface);
 
 		if (maxbw > 0) {
 
@@ -305,7 +305,7 @@ void parseifinfo(int newdb)
 
 			/* sync counters if traffic is greater than set maximum */
 			if ( (rxchange > maxtransfer) || (txchange > maxtransfer) ) {
-				snprintf(errorstring, 512, "Traffic rate for \"%s\" higher than set maximum %d Mbit (%"PRIu64"->%"PRIu64", r%"PRIu64" t%"PRIu64"), syncing.", data.interface, maxbw, (uint64_t)interval, maxtransfer, rxchange, txchange);
+				snprintf(errorstring, 512, "Traffic rate for \"%s\" higher than set maximum %d Mbit (%"PRIu64"->%"PRIu64", r%"PRIu64" t%"PRIu64"), syncing.", data.iface.interface, maxbw, (uint64_t)interval, maxtransfer, rxchange, txchange);
 				printe(PT_Info);
 				rxchange = krxchange = rxkchange = txchange = ktxchange = txkchange = 0;
 				ifinfo.rxp = ifinfo.txp = 0;

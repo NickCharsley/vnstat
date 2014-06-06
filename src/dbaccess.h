@@ -68,4 +68,20 @@ typedef struct {
 	uint64_t btime;
 } DATA12;
 
+typedef struct {
+	int version;
+	char interface[32];
+	char nick[32];
+	int active;
+	uint64_t totalrx, totaltx, currx, curtx;
+	int totalrxk, totaltxk;
+	time_t lastupdated, created;
+	DAY day[30];
+	MONTH month[12];
+	DAY top10[10];
+	HOUR hour[24];
+	uint64_t btime;
+} DATA13;
+
+
 #endif

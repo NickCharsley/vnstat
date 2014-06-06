@@ -5,10 +5,10 @@ void showxml(void)
 {
 	int i;
 
-	printf(" <interface id=\"%s\">\n", data.interface);
+	printf(" <interface id=\"%s\">\n", data.iface.interface);
 
-	printf("  <id>%s</id>\n", data.interface);
-	printf("  <nick>%s</nick>\n", data.nick);
+	printf("  <id>%s</id>\n", data.iface.interface);
+	printf("  <nick>%s</nick>\n", data.iface.nick);
 
 	printf("  <created>");
 	xmldate(&data.created, 1);

@@ -11,7 +11,7 @@ int cacheadd(const char *iface, int sync)
 
 	/* skip if already in list */
 	while (p != NULL) {
-		if (strcmp(p->data.interface, iface)==0) {
+		if (strcmp(p->data.iface.interface, iface)==0) {
 			if (debug) {
 				printf("cache: %s already cached\n", iface);
 			}
@@ -29,9 +29,9 @@ int cacheadd(const char *iface, int sync)
 
 	n->next = dataptr;
 	dataptr = n;
-	strncpy_nt(n->data.interface, iface, 32);
-	n->data.interface[31] = '\0';
-	n->data.active = 1;
+	strncpy_nt(n->data.iface.interface, iface, 32);
+	n->data.iface.interface[31] = '\0';
+	n->data.iface.active = 1;
 	n->filled = 0;
 	n->sync = sync;
 
@@ -53,7 +53,7 @@ datanode *cacheremove(const char *iface)
 	} else {
 
 		/* handle list head remove */
-		if (strcmp(p->data.interface, iface)==0) {
+		if (strcmp(p->data.iface.interface, iface)==0) {
 			dataptr = p->next;
 			if (debug) {
 				printf("cache: h %s removed\n", iface);
@@ -68,7 +68,7 @@ datanode *cacheremove(const char *iface)
 		/* handle other locations */
 		while (p != NULL) {
 
-			if (strcmp(p->data.interface, iface)==0) {
+			if (strcmp(p->data.iface.interface, iface)==0) {
 				o->next = p->next;
 				if (debug) {
 					printf("cache: %s removed\n", iface);
@@ -93,14 +93,14 @@ int cacheupdate(void)
 
 	/* update if already in list */
 	while (p != NULL) {
-		if (strcmp(p->data.interface, data.interface)==0) {
+		if (strcmp(p->data.iface.interface, data.iface.interface)==0) {
 			if (memcpy(&p->data, &data, sizeof(p->data))!=NULL) {
 				p->filled = 1;
 			} else {
 				p->filled = 0;
 			}
 			if (debug) {
-				printf("cache: %s updated (%d)\n", p->data.interface, p->filled);
+				printf("cache: %s updated (%d)\n", p->data.iface.interface, p->filled);
 			}
 			return p->filled;
 		}
@@ -123,7 +123,7 @@ int cacheupdate(void)
 	}
 
 	if (debug) {
-		printf("cache: %s added and updated (%d)\n", n->data.interface, n->filled);
+		printf("cache: %s added and updated (%d)\n", n->data.iface.interface, n->filled);
 	}
 
 	return n->filled;
@@ -141,7 +141,7 @@ void cacheshow(void)
 
 		printf("cache:");
 		while (p != NULL) {
-			printf(" %d. \"%s\"  ", i, p->data.interface);
+			printf(" %d. \"%s\"  ", i, p->data.iface.interface);
 			p = p->next;
 			i++;
 		}
@@ -160,10 +160,10 @@ void cachestatus(void)
 	if (p != NULL) {
 
 		while (p != NULL) {
-			if ((b+strlen(p->data.interface)+1) < 508) {
-				strncat(buffer, p->data.interface, strlen(p->data.interface));
+			if ((b+strlen(p->data.iface.interface)+1) < 508) {
+				strncat(buffer, p->data.iface.interface, strlen(p->data.iface.interface));
 				strcat(buffer, " ");
-				b = b+strlen(p->data.interface)+1;
+				b = b+strlen(p->data.iface.interface)+1;
 			} else {
 				strcat(buffer, "...");
 				break;
@@ -194,12 +194,12 @@ int cacheget(datanode *dn)
 		if (data.version != DBVERSION ||
 			data.created == 0 ||
 			data.lastupdated == 0 ||
-			data.interface[0] == '\0' ||
-			data.active > 1 ||
-			data.active < 0) {
+			data.iface.interface[0] == '\0' ||
+			data.iface.active > 1 ||
+			data.iface.active < 0) {
 
 			if (debug)
-				printf("cache get: validation failed (%d/%u/%u/%d/%d)\n", data.version, (unsigned int)data.created, (unsigned int)data.lastupdated, data.interface[0], data.active);
+				printf("cache get: validation failed (%d/%u/%u/%d/%d)\n", data.version, (unsigned int)data.created, (unsigned int)data.lastupdated, data.iface.interface[0], data.iface.active);
 
 			/* force reading of database file */
 			dn->filled = 0;
@@ -207,7 +207,7 @@ int cacheget(datanode *dn)
 	}
 
 	if (debug) {
-		printf("cache get: %s (%d/%d)\n", dn->data.interface, dn->filled, dn->data.active);
+		printf("cache get: %s (%d/%d)\n", dn->data.iface.interface, dn->filled, dn->data.iface.active);
 	}
 
 	return dn->filled;
@@ -225,7 +225,7 @@ void cacheflush(const char *dirname)
 		/* write data to file if needed */
 		if (f->filled && dirname!=NULL) {
 			memcpy(&data, &f->data, sizeof(data));
-			writedb(f->data.interface, dirname, 0);
+			writedb(f->data.iface.interface, dirname, 0);
 		}
 
 		free(f);
@@ -253,7 +253,7 @@ int cacheactivecount(void)
 	int c = 0;
 
 	while (p != NULL) {
-		if (p->data.active) {
+		if (p->data.iface.active) {
 			c++;
 		}
 		p = p->next;
@@ -291,28 +291,28 @@ uint32_t dbcheck(uint32_t dbhash, int *forcesave)
 
 				while (offset <= (int)strlen(ifacelist)) {
 					sscanf(ifacelist+offset, "%31s", interface);
-					if (strcmp(p->data.interface, interface)==0) {
+					if (strcmp(p->data.iface.interface, interface)==0) {
 						found = 1;
 						break;
 					}
 					offset += (int)strlen(interface)+1;
 				}
 
-				if (p->data.active==1 && found==0) {
-					p->data.active = 0;
+				if (p->data.iface.active==1 && found==0) {
+					p->data.iface.active = 0;
 					p->data.currx = p->data.curtx = 0;
 					if (cfg.savestatus) {
 						*forcesave = 1;
 					}
-					snprintf(errorstring, 512, "Interface \"%s\" disabled.", p->data.interface);
+					snprintf(errorstring, 512, "Interface \"%s\" disabled.", p->data.iface.interface);
 					printe(PT_Info);
-				} else if (p->data.active==0 && found==1) {
-					p->data.active = 1;
+				} else if (p->data.iface.active==0 && found==1) {
+					p->data.iface.active = 1;
 					p->data.currx = p->data.curtx = 0;
 					if (cfg.savestatus) {
 						*forcesave = 1;
 					}
-					snprintf(errorstring, 512, "Interface \"%s\" enabled.", p->data.interface);
+					snprintf(errorstring, 512, "Interface \"%s\" enabled.", p->data.iface.interface);
 					printe(PT_Info);
 				}
 			}

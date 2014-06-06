@@ -136,8 +136,8 @@ and most can be changed later from the config file.
 #define LOCKTRYLIMIT 5
 
 /* database version */
-/* 1 = 1.0, 2 = 1.1-1.2, 3 = 1.3- */
-#define DBVERSION 3
+/* 1 = 1.0, 2 = 1.1-1.2, 3 = 1.3-1.12 4=1.13- */
+#define DBVERSION 4
 
 /* version string */
 #define VNSTATVERSION "1.12 beta"
@@ -240,24 +240,30 @@ typedef struct {
 
 /* db structure */
 typedef struct {
-	int version;
-	char interface[32];
-	char nick[32];
+    	char interface[32];
+        char ssid[32];
+	char nick[66];
 	int active;
+} INTERFACE;
+
+typedef struct {
+	int version;
+        INTERFACE iface;
 	uint64_t totalrx, totaltx, currx, curtx;
 	int totalrxk, totaltxk;
 	time_t lastupdated, created;
+        int monthrotate;
 	DAY day[30];
 	MONTH month[12];
 	DAY top10[10];
 	HOUR hour[24];
 	uint64_t btime;
-} DATA;
+} DATA,DATA14;
 
-typedef struct ibwnode {
+typedef struct ibwnode_p {
 	char interface[32];
 	int limit;
-	struct ibwnode *next;
+	struct ibwnode_p *next;
 } ibwnode;
 
 typedef enum PrintType {

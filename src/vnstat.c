@@ -506,7 +506,7 @@ void handlecounterreset(PARAMS *p)
 	data.curtx=0;
 	writedb(p->interface, p->dirname, 0);
 	if (debug)
-		printf("Counters reseted for \"%s\"\n", data.interface);
+		printf("Counters reseted for \"%s\"\n", data.iface.interface);
 }
 
 void handleimport(PARAMS *p)
@@ -536,9 +536,9 @@ void handleimport(PARAMS *p)
 		printf("Error: validation of imported database failed.\n");
 		exit(EXIT_FAILURE);
 	}
-	strncpy_nt(data.interface, p->interface, 32);
+	strncpy_nt(data.iface.interface, p->interface, 32);
 	if (writedb(p->interface, p->dirname, 1)) {
-		printf("Database import for \"%s\" completed.\n", data.interface);
+		printf("Database import for \"%s\" completed.\n", data.iface.interface);
 	}
 	exit(EXIT_SUCCESS);
 }
@@ -557,7 +557,7 @@ void handlecountersync(PARAMS *p)
 		exit(EXIT_FAILURE);
 	}
 	if (debug)
-		printf("Counters synced for \"%s\"\n", data.interface);
+		printf("Counters synced for \"%s\"\n", data.iface.interface);
 }
 
 void handledelete(PARAMS *p)
@@ -636,13 +636,13 @@ void handleenabledisable(PARAMS *p)
 			exit(EXIT_FAILURE);
 		}
 		p->newdb=readdb(p->interface, p->dirname);
-		if (!data.active && !p->newdb) {
-			data.active=1;
+		if (!data.iface.active && !p->newdb) {
+			data.iface.active=1;
 			writedb(p->interface, p->dirname, 0);
 			if (debug)
-				printf("Interface \"%s\" enabled.\n", data.interface);
+				printf("Interface \"%s\" enabled.\n", data.iface.interface);
 		} else if (!p->newdb) {
-			printf("Interface \"%s\" is already enabled.\n", data.interface);
+			printf("Interface \"%s\" is already enabled.\n", data.iface.interface);
 		}
 	} else if (p->active==0) {
 		if (!spacecheck(p->dirname) && !p->force) {
@@ -650,13 +650,13 @@ void handleenabledisable(PARAMS *p)
 			exit(EXIT_FAILURE);
 		}
 		p->newdb=readdb(p->interface, p->dirname);
-		if (data.active && !p->newdb) {
-			data.active=0;
+		if (data.iface.active && !p->newdb) {
+			data.iface.active=0;
 			writedb(p->interface, p->dirname, 0);
 			if (debug)
-				printf("Interface \"%s\" disabled.\n", data.interface);
+				printf("Interface \"%s\" disabled.\n", data.iface.interface);
 		} else if (!p->newdb) {
-			printf("Interface \"%s\" is already disabled.\n", data.interface);
+			printf("Interface \"%s\" is already disabled.\n", data.iface.interface);
 		}
 	}
 }
@@ -698,16 +698,16 @@ void handleupdate(PARAMS *p)
 				printf("\nProcessing file \"%s/%s\"...\n", p->dirname, p->interface);
 			p->newdb=readdb(p->interface, p->dirname);
 
-			if (!data.active) {
+			if (!data.iface.active) {
 				if (debug)
-					printf("Disabled interface \"%s\" not updated.\n", data.interface);
+					printf("Disabled interface \"%s\" not updated.\n", data.iface.interface);
 				continue;
 			}
 
 			/* skip interface if not available */
-			if (!getifinfo(data.interface)) {
+			if (!getifinfo(data.iface.interface)) {
 				if (debug)
-					printf("Interface \"%s\" not available, skipping.\n", data.interface);
+					printf("Interface \"%s\" not available, skipping.\n", data.iface.interface);
 				continue;
 			}
 			parseifinfo(p->newdb);
@@ -726,7 +726,7 @@ void handleupdate(PARAMS *p)
 					exit(EXIT_FAILURE);
 				} else {
 					if (debug)
-						printf("\"%s\" not updated, %s > %s.\n", data.interface, (char*)asctime(localtime(&data.lastupdated)), (char*)asctime(localtime(&current)));
+						printf("\"%s\" not updated, %s > %s.\n", data.iface.interface, (char*)asctime(localtime(&data.lastupdated)), (char*)asctime(localtime(&current)));
 				}
 			}
 		}
@@ -741,15 +741,15 @@ void handleupdate(PARAMS *p)
 	} else {
 		p->newdb=readdb(p->interface, p->dirname);
 
-		if (!data.active) {
+		if (!data.iface.active) {
 			if (debug)
-				printf("Disabled interface \"%s\" not updated.\n", data.interface);
+				printf("Disabled interface \"%s\" not updated.\n", data.iface.interface);
 			return;
 		}
 
-		if (!getifinfo(data.interface) && !p->force) {
+		if (!getifinfo(data.iface.interface) && !p->force) {
 			getiflist(&p->ifacelist);
-			printf("Error: Interface \"%s\" couldn't be found.\n Only available interfaces can be added for monitoring.\n", data.interface);
+			printf("Error: Interface \"%s\" couldn't be found.\n Only available interfaces can be added for monitoring.\n", data.iface.interface);
 			printf("\n The following interfaces are currently available:\n    %s\n", p->ifacelist);
 			free(p->ifacelist);
 			exit(EXIT_FAILURE);
@@ -757,7 +757,7 @@ void handleupdate(PARAMS *p)
 		parseifinfo(p->newdb);
 		if ((current>=data.lastupdated) || p->force) {
 			if (strcmp(p->nick, "none")!=0)
-				strncpy_nt(data.nick, p->nick, 32);
+				strncpy_nt(data.iface.nick, p->nick, 32);
 			writedb(p->interface, p->dirname, p->newdb);
 		} else {
 			/* print error if previous update is more than 6 hours in the future */
@@ -770,7 +770,7 @@ void handleupdate(PARAMS *p)
 				exit(EXIT_FAILURE);
 			} else {
 				if (debug)
-					printf("\"%s\" not updated, %s > %s.\n", data.interface, (char*)asctime(localtime(&data.lastupdated)), (char*)asctime(localtime(&current)));
+					printf("\"%s\" not updated, %s > %s.\n", data.iface.interface, (char*)asctime(localtime(&data.lastupdated)), (char*)asctime(localtime(&current)));
 			}
 		}
 	}

@@ -286,14 +286,14 @@ int main(int argc, char *argv[])
 				while (datalist!=NULL) {
 
 					if (debug) {
-						printf("d: processing %s (%d)...\n", datalist->data.interface, dodbsave);
+						printf("d: processing %s (%d)...\n", datalist->data.iface.interface, dodbsave);
 					}
 
 					/* get data from cache if available */
 					if (cacheget(datalist)==0) {
 
 						/* try to read data from file if not cached */
-						if (readdb(datalist->data.interface, dirname)!=-1) {
+						if (readdb(datalist->data.iface.interface, dirname)!=-1) {
 							/* mark cache as filled on read success and force interface status update */
 							datalist->filled = 1;
 							dbhash = 0;
@@ -304,8 +304,8 @@ int main(int argc, char *argv[])
 					}
 
 					/* get info if interface has been marked as active */
-					if (data.active) {
-						if (getifinfo(data.interface)) {
+					if (data.iface.active) {
+						if (getifinfo(data.iface.interface)) {
 							if (datalist->sync) { /* if --sync was used during startup */
 								data.currx = ifinfo.rx;
 								data.curtx = ifinfo.tx;
@@ -315,8 +315,8 @@ int main(int argc, char *argv[])
 							}
 						} else {
 							/* disable interface since we can't access its data */
-							data.active = 0;
-							snprintf(errorstring, 512, "Interface \"%s\" not available, disabling.", data.interface);
+							data.iface.active = 0;
+							snprintf(errorstring, 512, "Interface \"%s\" not available, disabling.", data.iface.interface);
 							printe(PT_Info);
 						}
 					} else if (debug) {
@@ -331,7 +331,7 @@ int main(int argc, char *argv[])
 						/* skip update if previous update is less than a day in the future */
 						/* otherwise exit with error message since the clock is problably messed */
 						if (data.lastupdated>(current+86400)) {
-							snprintf(errorstring, 512, "Interface \"%s\" has previous update date too much in the future, exiting.", data.interface);
+							snprintf(errorstring, 512, "Interface \"%s\" has previous update date too much in the future, exiting.", data.iface.interface);
 							printe(PT_Error);
 
 							/* clean daemon stuff before exit */
@@ -349,9 +349,9 @@ int main(int argc, char *argv[])
 
 					/* write data to file if now is the time for it */
 					if (dodbsave) {
-						if (checkdb(datalist->data.interface, dirname)) {
+						if (checkdb(datalist->data.iface.interface, dirname)) {
 							if (spacecheck(dirname)) {
-								if (writedb(datalist->data.interface, dirname, 0)) {
+								if (writedb(datalist->data.iface.interface, dirname, 0)) {
 									if (!dbsaved) {
 										snprintf(errorstring, 512, "Database write possible again.");
 										printe(PT_Info);
@@ -374,9 +374,9 @@ int main(int argc, char *argv[])
 							}
 						} else {
 							/* remove interface from update list since the database file doesn't exist anymore */
-							snprintf(errorstring, 512, "Database for interface \"%s\" no longer exists, removing from update list.", datalist->data.interface);
+							snprintf(errorstring, 512, "Database for interface \"%s\" no longer exists, removing from update list.", datalist->data.iface.interface);
 							printe(PT_Info);
-							datalist = cacheremove(datalist->data.interface);
+							datalist = cacheremove(datalist->data.iface.interface);
 							dbcount--;
 							cachestatus();
 							continue;
@@ -583,8 +583,8 @@ int addinterfaces(const char *dirname)
 
 		/* create database for interface */
 		initdb();
-		strncpy_nt(data.interface, interface, 32);
-		strncpy_nt(data.nick, data.interface, 32);
+		strncpy_nt(data.iface.interface, interface, 32);
+		strncpy_nt(data.iface.nick, data.iface.interface, 32);
 		if (!getifinfo(interface)) {
 			if (debug)
 				printf("getifinfo failed, skip\n");

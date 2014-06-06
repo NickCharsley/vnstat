@@ -367,10 +367,10 @@ void drawsummary(int type, int showheader, int showedge, int rate)
 
 	colorinit();
 
-	if (strcmp(data.nick, data.interface)==0) {
-		snprintf(buffer, 512, "%s", data.interface);
+	if (strcmp(data.iface.nick, data.iface.interface)==0) {
+		snprintf(buffer, 512, "%s", data.iface.interface);
 	} else {
-		snprintf(buffer, 512, "%s (%s)", data.nick, data.interface);
+		snprintf(buffer, 512, "%s (%s)", data.iface.nick, data.iface.interface);
 	}
 
 	layoutinit(buffer, width, height, showheader, showedge);
@@ -700,10 +700,10 @@ void drawoldsummary(int type, int showheader, int showedge, int rate)
 
 	colorinit();
 
-	if (strcmp(data.nick, data.interface)==0) {
-		snprintf(buffer, 512, "%s", data.interface);
+	if (strcmp(data.iface.nick, data.iface.interface)==0) {
+		snprintf(buffer, 512, "%s", data.iface.interface);
 	} else {
-		snprintf(buffer, 512, "%s (%s)", data.nick, data.interface);
+		snprintf(buffer, 512, "%s (%s)", data.iface.nick, data.iface.interface);
 	}
 
 	layoutinit(buffer, width, height, showheader, showedge);
@@ -867,10 +867,10 @@ void drawhourly(int showheader, int showedge, int rate)
 
 	colorinit();
 
-	if (strcmp(data.nick, data.interface)==0) {
-		snprintf(buffer, 512, "%s / hourly", data.interface);
+	if (strcmp(data.iface.nick, data.iface.interface)==0) {
+		snprintf(buffer, 512, "%s / hourly", data.iface.interface);
 	} else {
-		snprintf(buffer, 512, "%s (%s) / hourly", data.nick, data.interface);
+		snprintf(buffer, 512, "%s (%s) / hourly", data.iface.nick, data.iface.interface);
 	}
 
 	layoutinit(buffer, width, height, showheader, showedge);
@@ -912,10 +912,10 @@ void drawdaily(int showheader, int showedge)
 
 	colorinit();
 
-	if (strcmp(data.nick, data.interface)==0) {
-		snprintf(buffer, 512, "%s / daily", data.interface);
+	if (strcmp(data.iface.nick, data.iface.interface)==0) {
+		snprintf(buffer, 512, "%s / daily", data.iface.interface);
 	} else {
-		snprintf(buffer, 512, "%s (%s) / daily", data.nick, data.interface);
+		snprintf(buffer, 512, "%s (%s) / daily", data.iface.nick, data.iface.interface);
 	}
 
 	layoutinit(buffer, width, height, showheader, showedge);
@@ -1062,10 +1062,10 @@ void drawmonthly(int showheader, int showedge)
 
 	colorinit();
 
-	if (strcmp(data.nick, data.interface)==0) {
-		snprintf(buffer, 512, "%s / monthly", data.interface);
+	if (strcmp(data.iface.nick, data.iface.interface)==0) {
+		snprintf(buffer, 512, "%s / monthly", data.iface.interface);
 	} else {
-		snprintf(buffer, 512, "%s (%s) / monthly", data.nick, data.interface);
+		snprintf(buffer, 512, "%s (%s) / monthly", data.iface.nick, data.iface.interface);
 	}
 
 	layoutinit(buffer, width, height, showheader, showedge);
@@ -1225,10 +1225,10 @@ void drawtop(int showheader, int showedge)
 
 	colorinit();
 
-	if (strcmp(data.nick, data.interface)==0) {
-		snprintf(buffer, 512, "%s / top 10", data.interface);
+	if (strcmp(data.iface.nick, data.iface.interface)==0) {
+		snprintf(buffer, 512, "%s / top 10", data.iface.interface);
 	} else {
-		snprintf(buffer, 512, "%s (%s) / top 10", data.nick, data.interface);
+		snprintf(buffer, 512, "%s (%s) / top 10", data.iface.nick, data.iface.interface);
 	}
 
 	layoutinit(buffer, width, height, showheader, showedge);

@@ -13,8 +13,8 @@ int mergedb(char iface[], char dirname[])
 
 	/* create empty database */
 	emptydb(&mergedata);
-	strncpy_nt(mergedata.interface, iface, 32);
-	strncpy_nt(mergedata.nick, mergedata.interface, 32);
+	strncpy_nt(mergedata.iface.interface, iface, 32);
+	strncpy_nt(mergedata.iface.nick, mergedata.iface.interface, 32);
 
 	if (debug)
 		printf("iface merge: %s\n", iface);
@@ -27,12 +27,12 @@ int mergedb(char iface[], char dirname[])
 			printf("merging %s:\n", ifaceptr);
 
 		if (readdb(ifaceptr, dirname)!=0) {
-			printf("Merge \"%s\" failed.\n", mergedata.interface);
+			printf("Merge \"%s\" failed.\n", mergedata.iface.interface);
 			return 0;
 		}
 
 		if (!mergewith(&mergedata)) {
-			printf("Merge \"%s\" failed for interface \"%s\".\n", mergedata.interface, ifaceptr);
+			printf("Merge \"%s\" failed for interface \"%s\".\n", mergedata.iface.interface, ifaceptr);
 			return 0;
 		}
 
@@ -59,7 +59,7 @@ void emptydb(DATA *dat)
 	current = time(NULL);
 
 	dat->version = DBVERSION;
-	dat->active = 1;
+	dat->iface.active = 1;
 	dat->totalrx = 0;
 	dat->totaltx = 0;
 	dat->currx = 0;

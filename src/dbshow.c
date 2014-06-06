@@ -6,7 +6,7 @@ void showdb(int qmode)
 {
 	if (data.totalrx+data.totaltx==0 && data.totalrxk+data.totaltxk==0 && qmode!=4) {
 
-		printf(" %s: Not enough data available yet.\n", data.interface);
+		printf(" %s: Not enough data available yet.\n", data.iface.interface);
 
 	} else {
 
@@ -78,16 +78,16 @@ void showsummary(void)
 	}
 
 	indent(3);
-	if (strcmp(data.interface, data.nick)==0) {
-		if (data.active)
-			printf("%s", data.interface);
+	if (strcmp(data.iface.interface, data.iface.nick)==0) {
+		if (data.iface.active)
+			printf("%s", data.iface.interface);
 		else
-			printf("%s [disabled]", data.interface);
+			printf("%s [disabled]", data.iface.interface);
 	} else {
-		if (data.active)
-			printf("%s (%s)", data.nick, data.interface);
+		if (data.iface.active)
+			printf("%s (%s)", data.iface.nick, data.iface.interface);
 		else
-			printf("%s (%s) [disabled]", data.nick, data.interface);
+			printf("%s (%s) [disabled]", data.iface.nick, data.iface.interface);
 	}
 
 	/* get formated date for creation date */
@@ -264,16 +264,16 @@ void showshort(void)
 
 	e_rx=e_tx=0;
 
-	if (strcmp(data.interface, data.nick)==0) {
-		if (data.active)
-			printf(" %s:\n", data.interface);
+	if (strcmp(data.iface.interface, data.iface.nick)==0) {
+		if (data.iface.active)
+			printf(" %s:\n", data.iface.interface);
 		else
-			printf(" %s [disabled]:\n", data.interface);
+			printf(" %s [disabled]:\n", data.iface.interface);
 	} else {
-		if (data.active)
-			printf(" %s (%s):\n", data.nick, data.interface);
+		if (data.iface.active)
+			printf(" %s (%s):\n", data.iface.nick, data.iface.interface);
 		else
-			printf(" %s (%s) [disabled]:\n", data.nick, data.interface);
+			printf(" %s (%s) [disabled]:\n", data.iface.nick, data.iface.interface);
 	}
 
 	if (data.month[1].used) {
@@ -374,16 +374,16 @@ void showdays(void)
 	e_rx=e_tx=t_rx=t_rxk=0;
 
 	printf("\n");
-	if (strcmp(data.interface, data.nick)==0) {
-		if (data.active)
-			printf(" %s  /  daily\n\n", data.interface);
+	if (strcmp(data.iface.interface, data.iface.nick)==0) {
+		if (data.iface.active)
+			printf(" %s  /  daily\n\n", data.iface.interface);
 		else
-			printf(" %s [disabled]  /  daily\n\n", data.interface);
+			printf(" %s [disabled]  /  daily\n\n", data.iface.interface);
 	} else {
-		if (data.active)
-			printf(" %s (%s)  /  daily\n\n", data.nick, data.interface);
+		if (data.iface.active)
+			printf(" %s (%s)  /  daily\n\n", data.iface.nick, data.iface.interface);
 		else
-			printf(" %s (%s) [disabled]  /  daily\n\n", data.nick, data.interface);
+			printf(" %s (%s) [disabled]  /  daily\n\n", data.iface.nick, data.iface.interface);
 	}
 
 	if (cfg.ostyle == 3) {
@@ -492,16 +492,16 @@ void showmonths(void)
 	e_rx=e_tx=t_rx=t_rxk=0;
 
 	printf("\n");
-	if (strcmp(data.interface, data.nick)==0) {
-		if (data.active)
-			printf(" %s  /  monthly\n\n", data.interface);
+	if (strcmp(data.iface.interface, data.iface.nick)==0) {
+		if (data.iface.active)
+			printf(" %s  /  monthly\n\n", data.iface.interface);
 		else
-			printf(" %s [disabled]  /  monthly\n\n", data.interface);
+			printf(" %s [disabled]  /  monthly\n\n", data.iface.interface);
 	} else {
-		if (data.active)
-			printf(" %s (%s)  /  monthly\n\n", data.nick, data.interface);
+		if (data.iface.active)
+			printf(" %s (%s)  /  monthly\n\n", data.iface.nick, data.iface.interface);
 		else
-			printf(" %s (%s) [disabled]  /  monthly\n\n", data.nick, data.interface);
+			printf(" %s (%s) [disabled]  /  monthly\n\n", data.iface.nick, data.iface.interface);
 	}
 
 	if (cfg.ostyle == 3) {
@@ -608,16 +608,16 @@ void showtop(void)
 	t_rx=t_rxk=0;
 
 	printf("\n");
-	if (strcmp(data.interface, data.nick)==0) {
-		if (data.active)
-			printf(" %s  /  top 10\n\n", data.interface);
+	if (strcmp(data.iface.interface, data.iface.nick)==0) {
+		if (data.iface.active)
+			printf(" %s  /  top 10\n\n", data.iface.interface);
 		else
-			printf(" %s [disabled]  /  top 10\n\n", data.interface);
+			printf(" %s [disabled]  /  top 10\n\n", data.iface.interface);
 	} else {
-		if (data.active)
-			printf(" %s (%s)  /  top 10\n\n", data.nick, data.interface);
+		if (data.iface.active)
+			printf(" %s (%s)  /  top 10\n\n", data.iface.nick, data.iface.interface);
 		else
-			printf(" %s (%s) [disabled]  /  top 10\n\n", data.nick, data.interface);
+			printf(" %s (%s) [disabled]  /  top 10\n\n", data.iface.nick, data.iface.interface);
 	}
 
 	if (cfg.ostyle == 3) {
@@ -700,16 +700,16 @@ void showweeks(void)
 	e_rx=e_tx=t_rx=t_tx=t_rxk=t_txk=0;
 
 	printf("\n");
-	if (strcmp(data.interface, data.nick)==0) {
-		if (data.active)
-			printf(" %s  /  weekly\n\n", data.interface);
+	if (strcmp(data.iface.interface, data.iface.nick)==0) {
+		if (data.iface.active)
+			printf(" %s  /  weekly\n\n", data.iface.interface);
 		else
-			printf(" %s [disabled]  /  weekly\n\n", data.interface);
+			printf(" %s [disabled]  /  weekly\n\n", data.iface.interface);
 	} else {
-		if (data.active)
-			printf(" %s (%s)  /  weekly\n\n", data.nick, data.interface);
+		if (data.iface.active)
+			printf(" %s (%s)  /  weekly\n\n", data.iface.nick, data.iface.interface);
 		else
-			printf(" %s (%s) [disabled]  /  weekly\n\n", data.nick, data.interface);
+			printf(" %s (%s) [disabled]  /  weekly\n\n", data.iface.nick, data.iface.interface);
 	}
 
 	indent(3);
@@ -892,16 +892,16 @@ void showhours(void)
 	matrix[12][2]='|';
 
 	/* title */
-	if (strcmp(data.interface, data.nick)==0) {
-		if (data.active)
-			snprintf(matrix[0], 81, " %s", data.interface);
+	if (strcmp(data.iface.interface, data.iface.nick)==0) {
+		if (data.iface.active)
+			snprintf(matrix[0], 81, " %s", data.iface.interface);
 		else
-			snprintf(matrix[0], 81, " %s [disabled]", data.interface);
+			snprintf(matrix[0], 81, " %s [disabled]", data.iface.interface);
 	} else {
-		if (data.active)
-			snprintf(matrix[0], 81, " %s (%s)", data.nick, data.interface);
+		if (data.iface.active)
+			snprintf(matrix[0], 81, " %s (%s)", data.iface.nick, data.iface.interface);
 		else
-			snprintf(matrix[0], 81, " %s (%s) [disabled]", data.nick, data.interface);
+			snprintf(matrix[0], 81, " %s (%s) [disabled]", data.iface.nick, data.iface.interface);
 	}
 
 	/* time to the corner */
@@ -961,16 +961,16 @@ void showoneline(void)
 	printf("%d;", ONELINEVERSION);
 
 	/* interface name */
-	if (strcmp(data.interface, data.nick)==0) {
-		if (data.active)
-			printf("%s;", data.interface);
+	if (strcmp(data.iface.interface, data.iface.nick)==0) {
+		if (data.iface.active)
+			printf("%s;", data.iface.interface);
 		else
-			printf("%s [disabled];", data.interface);
+			printf("%s [disabled];", data.iface.interface);
 	} else {
-		if (data.active)
-			printf("%s (%s);", data.nick, data.interface);
+		if (data.iface.active)
+			printf("%s (%s);", data.iface.nick, data.iface.interface);
 		else
-			printf("%s (%s) [disabled];", data.nick, data.interface);
+			printf("%s (%s) [disabled];", data.iface.nick, data.iface.interface);
 	}
 
 	d=localtime(&data.day[0].date);
@@ -1006,9 +1006,9 @@ void dumpdb(void)
 	int i;
 
 	printf("version;%d\n", data.version);
-	printf("active;%d\n", data.active);
-	printf("interface;%s\n", data.interface);
-	printf("nick;%s\n", data.nick);
+	printf("active;%d\n", data.iface.active);
+	printf("interface;%s\n", data.iface.interface);
+	printf("nick;%s\n", data.iface.nick);
 	printf("created;%u\n", (unsigned int)data.created);
 	printf("updated;%u\n", (unsigned int)data.lastupdated);
 
